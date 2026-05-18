@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ company_name }} - Business Insight Report</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <style>
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #eef2ff;
+            color: #111827;
+            padding: 40px;
+            line-height: 1.75;
+        }
+
+        .report-wrapper {
+            max-width: 1100px;
+            margin: auto;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+
+            box-shadow:
+                0 20px 60px rgba(15, 23, 42, 0.08),
+                0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .hero {
+            background:
+                radial-gradient(circle at top right, rgba(99,102,241,0.25), transparent 25%),
+                linear-gradient(135deg, #0f172a, #111827);
+
+            padding: 70px 60px;
+        }
+
+        .hero h1 {
+            color: white;
+            font-size: 52px;
+            margin-bottom: 18px;
+        }
+
+        .hero p {
+            color: #d1d5db;
+            font-size: 18px;
+        }
+
+        .content {
+            padding: 60px;
+        }
+
+        h1 {
+            font-size: 34px;
+            margin-top: 50px;
+            margin-bottom: 22px;
+        }
+
+        h2 {
+            font-size: 26px;
+            margin-top: 40px;
+            margin-bottom: 18px;
+        }
+
+        h3 {
+            font-size: 21px;
+            margin-top: 28px;
+            margin-bottom: 14px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            color: #374151;
+        }
+
+        ul,
+        ol {
+            margin-left: 24px;
+            margin-bottom: 28px;
+        }
+
+        li {
+            margin-bottom: 12px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 28px 0;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #e5e7eb;
+            padding: 18px;
+            text-align: left;
+        }
+
+        table th {
+            background: #f8fafc;
+        }
+
+        blockquote {
+            background: #eef2ff;
+            border-left: 5px solid #6366f1;
+            padding: 24px;
+            border-radius: 14px;
+            margin: 28px 0;
+        }
+
+        .footer {
+            background: #f8fafc;
+            border-top: 1px solid #e5e7eb;
+            padding: 32px 60px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+    <div class="report-wrapper">
+
+        <section class="hero">
+
+            <h1>{{ company_name }}</h1>
+
+            <p>
+                Personalized operational insights, strategic opportunities,
+                and AI-assisted business recommendations.
+            </p>
+
+            <br>
+
+            <p>
+                Generated on {{ current_date }}
+            </p>
+
+        </section>
+
+        <main class="content">
+            {{ html_body | safe }}
+        </main>
+
+        <footer class="footer">
+
+            <strong>Disclaimer:</strong>
+
+            This report was generated using publicly available information,
+            lead form inputs, and AI-assisted business analysis.
+
+        </footer>
+
+    </div>
+
+</body>
+</html>
