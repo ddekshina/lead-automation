@@ -113,6 +113,10 @@ curl -s -X POST "http://127.0.0.1:8000/api/submit-lead?sync=true" ^
 
 <img src="screenshots/html-report.png" width="900"/>
 
+### PDF Report
+
+<img src="screenshots/pdf-report.png" width="900"/>
+
 ### Email Delivery
 
 <img src="screenshots/email.png" width="900"/>
