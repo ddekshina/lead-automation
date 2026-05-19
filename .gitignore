@@ -1,2 +1,8 @@
-venv
+venv/
 .env
+__pycache__/
+*.pyc
+generated_reports/
+google_oauth_client.json
+google_drive_token.json
+credentials/*.json

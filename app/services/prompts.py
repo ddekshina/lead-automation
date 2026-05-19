@@ -15,10 +15,10 @@ IMPORTANT RULES:
 4. Keep recommendations practical and believable.
 5. The report should feel polished, consultative, and executive-friendly.
 6. Use confidence-aware language such as:
-   - “Based on publicly available information...”
-   - “Potential opportunities may include...”
-   - “The company appears to focus on...”
-7. Make the report feel genuinely personalized.
+   - "Based on publicly available information..."
+   - "Potential opportunities may include..."
+   - "The company appears to focus on..."
+7. Make the report feel genuinely personalized to {company_name}.
 8. Avoid generic AI buzzword spam.
 9. Write in a clean business tone.
 10. Keep the content concise but insightful.
@@ -49,6 +49,9 @@ Meta Description:
 Website Headings:
 {headings}
 
+Homepage Content Preview:
+{homepage_text}
+
 
 OUTPUT FORMAT
 ==============
@@ -60,7 +63,7 @@ Generate the following sections:
 Provide a concise high-level overview of the company and the inferred business opportunity.
 
 # Company Snapshot
-Include:
+Include a markdown table with:
 - Industry
 - Company Size
 - Website Focus
@@ -68,7 +71,7 @@ Include:
 - Key Themes Identified
 
 # Key Observations
-Generate 4–6 meaningful observations from the website content.
+Generate 4-6 meaningful observations from the website content and lead data.
 
 # Identified Business Opportunities
 Generate practical opportunities related to:
@@ -78,14 +81,13 @@ Generate practical opportunities related to:
 - operational efficiency
 - AI enablement
 
-Tie these opportunities to the submitted challenge and improvement goal.
+Tie these explicitly to the submitted challenge and improvement goal.
 
 # Strategic Recommendations
-Provide actionable next-step recommendations.
+Provide 3-5 actionable next-step recommendations numbered clearly.
 
 # Potential Value Areas
-Explain where measurable improvements may occur.
-Examples:
+Explain where measurable improvements may occur. Examples:
 - faster response times
 - reduced repetitive work
 - improved lead qualification
@@ -95,16 +97,13 @@ Examples:
 # Personalized Outreach Draft
 Write a short professional outreach email.
 
-Email requirements:
-- personalized
-- concise
-- consultative
-- not overly salesy
+Requirements:
+- Addressed to {full_name}
+- References {company_name} specifically
+- Concise, consultative, not overly salesy
 - 120 words maximum
 
 FINAL IMPORTANT RULE:
 The report must feel like it was genuinely prepared after researching the company.
 Avoid generic filler language.
 """
-
-

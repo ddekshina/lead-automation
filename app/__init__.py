@@ -1,3 +1,4 @@
-# app/__init__.py
+"""Ensure SSL is configured before any service module makes HTTPS requests."""
+from app.bootstrap import configure_ssl
 
-__version__ = "1.0.0"
+configure_ssl()

@@ -1,59 +1,150 @@
-from fastapi import APIRouter, HTTPException
+import logging
+import re
+from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi.responses import JSONResponse
 
 from app.schemas.lead_schema import LeadRequest
-
-from app.services.validator import validate_company_input
+from app.services.validator import validate_lead_input
 from app.services.scraper import scrape_company_data
-from app.services.ai_generator import generate_company_analysis
+from app.services.ai_generator import generate_audit_report
 from app.services.report_builder import ReportBuilder
+from app.services.email_sender import send_report_email
+from app.services.google_integrations import log_lead_to_sheet, archive_pdf_to_drive
+
+logger = logging.getLogger(__name__)
+
+router = APIRouter(prefix="/api", tags=["Lead Automation"])
 
 
-router = APIRouter(
-    prefix="/api",
-    tags=["Lead Automation"]
-)
+def _slugify(text: str) -> str:
+    """Converts a company name to a safe filename slug."""
+    return re.sub(r"[^\w]", "_", text.strip().lower())
 
 
-@router.post("/generate-report")
-async def generate_report(payload: LeadRequest):
+def _run_pipeline(lead_data: dict) -> dict:
+    """
+    Executes the full lead automation pipeline:
+      1. Validate
+      2. Scrape / Enrich
+      3. AI Report Generation
+      4. HTML + PDF Report Building
+      5. Email Delivery
+      6. (Bonus) Google Sheets logging + Drive archiving
 
-    company_name = payload.company_name
+    Returns a summary dict.
+    """
+    company_name = lead_data["company_name"]
+    slug = _slugify(company_name)
 
-    # -----------------------------
-    # 1. VALIDATE
-    # -----------------------------
-    validation = validate_company_input(company_name)
-
+    # 1. Validate
+    validation = validate_lead_input(lead_data)
     if not validation["valid"]:
-        raise HTTPException(
-            status_code=400,
-            detail=validation["message"]
+        raise ValueError(validation["message"])
+
+    # 2. Scrape + Enrich
+    logger.info(f"[Pipeline] Scraping: {lead_data.get('company_website')}")
+    enriched = scrape_company_data(lead_data)
+
+    scrape_status = enriched["company_research"].get("scrape_status", "failed")
+    if scrape_status != "success":
+        logger.warning(
+            f"[Pipeline] Website scraping status '{scrape_status}' for {company_name}. "
+            "Proceeding with fallback context."
         )
 
-    # -----------------------------
-    # 2. SCRAPE
-    # -----------------------------
-    scraped_data = scrape_company_data(company_name)
+    # 3. AI Analysis
+    logger.info(f"[Pipeline] Generating AI report for {company_name}")
+    try:
+        markdown_report = generate_audit_report(enriched)
+    except (EnvironmentError, RuntimeError) as e:
+        logger.error(f"[Pipeline] AI generation failed: {e}")
+        raise
 
-    # -----------------------------
-    # 3. AI ANALYSIS
-    # -----------------------------
-    ai_analysis = generate_company_analysis(scraped_data)
-
-    # -----------------------------
-    # 4. BUILD REPORT
-    # -----------------------------
+    # 4. Build Reports
     builder = ReportBuilder(company_name)
 
-    html = builder.build_html_report(ai_analysis)
-
-    output_path = builder.save_html_report(
-        html_content=html,
-        filename=f"{company_name.lower()}_report.html"
+    html_content = builder.build_html_report(markdown_report)
+    html_path = builder.save_html_report(
+        html_content,
+        filename=f"{slug}_report.html"
     )
 
-    return {
+    pdf_bytes = builder.build_pdf_report(markdown_report)
+    pdf_path = builder.save_pdf_report(
+        pdf_bytes,
+        filename=f"{slug}_report.pdf"
+    ) if pdf_bytes else None
+
+    # 5. Send Email
+    logger.info(f"[Pipeline] Sending email to {lead_data['work_email']}")
+    email_result = send_report_email(
+        recipient_email=lead_data["work_email"],
+        recipient_name=lead_data["full_name"],
+        company_name=company_name,
+        html_report_path=html_path,
+        pdf_report_path=pdf_path,
+    )
+
+    result = {
         "success": True,
         "company": company_name,
-        "report_path": str(output_path)
+        "scrape_status": scrape_status,
+        "html_report": str(html_path),
+        "pdf_report": str(pdf_path) if pdf_path else None,
+        "email_sent": email_result.get("success", False),
+        "email_note": email_result.get("error") if not email_result.get("success") else None,
+        "sheets_logged": False,
+        "drive_link": None,
     }
+
+    # 6. BONUS — Google Sheets logging
+    sheets_ok = log_lead_to_sheet(lead_data, result)
+    result["sheets_logged"] = sheets_ok
+
+    # 7. BONUS — Google Drive PDF archiving
+    if pdf_path:
+        drive_link = archive_pdf_to_drive(pdf_path, company_name)
+        result["drive_link"] = drive_link
+
+    return result
+
+
+@router.post("/submit-lead", summary="Submit a lead and trigger the full automation pipeline")
+async def submit_lead(payload: LeadRequest, background_tasks: BackgroundTasks):
+    """
+    Main lead intake endpoint.
+
+    Accepts full lead form data, validates it, runs the enrichment +
+    AI report + email pipeline, and returns a result summary.
+
+    For production high-volume use, swap the direct call for:
+        background_tasks.add_task(_run_pipeline, lead_data)
+    """
+    lead_data = payload.model_dump()
+    # Pydantic EmailStr serialises to an EmailStr object; force to plain str
+    lead_data["work_email"] = str(lead_data["work_email"])
+
+    try:
+        result = _run_pipeline(lead_data)
+        return JSONResponse(content=result, status_code=200)
+
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+
+    except EnvironmentError as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+    except RuntimeError as e:
+        raise HTTPException(status_code=502, detail=str(e))
+
+    except Exception as e:
+        logger.exception(f"Unexpected pipeline error: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred. Please try again."
+        )
+
+
+@router.get("/health", summary="Health check")
+async def health():
+    return {"status": "ok", "service": "lead-automation"}

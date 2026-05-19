@@ -3,30 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>{{ company_name }} - Business Insight Report</title>
-
+    <title>{{ company_name }} — Business Insight Report</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet"
-    >
-
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Inter', system-ui, sans-serif;
             background: #eef2ff;
             color: #111827;
-            padding: 40px;
+            padding: 40px 20px;
             line-height: 1.75;
         }
 
@@ -36,140 +24,183 @@
             background: #ffffff;
             border-radius: 24px;
             overflow: hidden;
-
-            box-shadow:
-                0 20px 60px rgba(15, 23, 42, 0.08),
-                0 8px 24px rgba(15, 23, 42, 0.06);
+            box-shadow: 0 20px 60px rgba(15,23,42,0.10), 0 8px 24px rgba(15,23,42,0.06);
         }
 
+        /* HERO */
         .hero {
             background:
-                radial-gradient(circle at top right, rgba(99,102,241,0.25), transparent 25%),
-                linear-gradient(135deg, #0f172a, #111827);
-
-            padding: 70px 60px;
+                radial-gradient(circle at 80% 20%, rgba(99,102,241,0.3), transparent 40%),
+                linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            padding: 70px 60px 60px;
+            position: relative;
+            overflow: hidden;
         }
-
+        .hero::after {
+            content: "";
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 40px;
+            background: #ffffff;
+            clip-path: ellipse(55% 100% at 50% 100%);
+        }
+        .hero-badge {
+            display: inline-block;
+            background: rgba(99,102,241,0.25);
+            border: 1px solid rgba(99,102,241,0.4);
+            color: #a5b4fc;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            padding: 6px 14px;
+            border-radius: 999px;
+            margin-bottom: 20px;
+        }
         .hero h1 {
-            color: white;
-            font-size: 52px;
-            margin-bottom: 18px;
+            color: #ffffff;
+            font-size: 48px;
+            font-weight: 800;
+            line-height: 1.1;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
         }
-
         .hero p {
-            color: #d1d5db;
-            font-size: 18px;
+            color: #94a3b8;
+            font-size: 17px;
+            max-width: 600px;
+        }
+        .hero .date {
+            margin-top: 20px;
+            color: #64748b;
+            font-size: 14px;
         }
 
+        /* CONTENT */
         .content {
             padding: 60px;
         }
 
         h1 {
-            font-size: 34px;
-            margin-top: 50px;
-            margin-bottom: 22px;
+            font-size: 30px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 52px;
+            margin-bottom: 16px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e5e7eb;
         }
+        .content > div > *:first-child { margin-top: 0; }
 
         h2 {
-            font-size: 26px;
-            margin-top: 40px;
-            margin-bottom: 18px;
-        }
-
-        h3 {
-            font-size: 21px;
-            margin-top: 28px;
+            font-size: 22px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-top: 36px;
             margin-bottom: 14px;
         }
-
-        p {
-            margin-bottom: 20px;
+        h3 {
+            font-size: 18px;
+            font-weight: 600;
             color: #374151;
+            margin-top: 24px;
+            margin-bottom: 10px;
         }
 
-        ul,
-        ol {
-            margin-left: 24px;
-            margin-bottom: 28px;
-        }
+        p { margin-bottom: 18px; color: #374151; font-size: 15.5px; }
 
-        li {
-            margin-bottom: 12px;
-        }
+        ul, ol { margin: 0 0 24px 24px; }
+        li { margin-bottom: 10px; color: #374151; font-size: 15.5px; }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin: 28px 0;
+            margin: 24px 0;
+            font-size: 14.5px;
+            border-radius: 12px;
+            overflow: hidden;
         }
-
-        table th,
-        table td {
-            border: 1px solid #e5e7eb;
-            padding: 18px;
-            text-align: left;
-        }
-
         table th {
-            background: #f8fafc;
+            background: #f1f5f9;
+            color: #374151;
+            font-weight: 600;
+            padding: 14px 18px;
+            text-align: left;
+            border-bottom: 2px solid #e2e8f0;
         }
+        table td {
+            padding: 13px 18px;
+            border-bottom: 1px solid #f1f5f9;
+            color: #475569;
+        }
+        table tr:last-child td { border-bottom: none; }
+        table tr:hover td { background: #fafafa; }
 
         blockquote {
             background: #eef2ff;
-            border-left: 5px solid #6366f1;
-            padding: 24px;
-            border-radius: 14px;
-            margin: 28px 0;
+            border-left: 4px solid #6366f1;
+            padding: 20px 24px;
+            border-radius: 0 12px 12px 0;
+            margin: 24px 0;
+            color: #4f46e5;
+            font-style: italic;
         }
 
+        code {
+            background: #f1f5f9;
+            color: #7c3aed;
+            padding: 2px 7px;
+            border-radius: 5px;
+            font-size: 0.9em;
+        }
+
+        strong { color: #0f172a; }
+
+        /* FOOTER */
         .footer {
             background: #f8fafc;
-            border-top: 1px solid #e5e7eb;
-            padding: 32px 60px;
-            color: #6b7280;
-            font-size: 14px;
+            border-top: 1px solid #e2e8f0;
+            padding: 28px 60px;
+            color: #94a3b8;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
         }
+        .footer strong { color: #64748b; }
 
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .hero { padding: 40px 28px 50px; }
+            .hero h1 { font-size: 30px; }
+            .content { padding: 32px 28px; }
+            .footer { padding: 24px 28px; }
+        }
     </style>
-
 </head>
-
 <body>
-
     <div class="report-wrapper">
-
         <section class="hero">
-
+            <div class="hero-badge">Business Insight Report</div>
             <h1>{{ company_name }}</h1>
-
-            <p>
-                Personalized operational insights, strategic opportunities,
-                and AI-assisted business recommendations.
-            </p>
-
-            <br>
-
-            <p>
-                Generated on {{ current_date }}
-            </p>
-
+            <p>Personalized operational insights, strategic opportunities, and AI-assisted business recommendations.</p>
+            <p class="date">Generated on {{ current_date }}</p>
         </section>
 
         <main class="content">
-            {{ html_body | safe }}
+            <div>{{ html_body | safe }}</div>
         </main>
 
         <footer class="footer">
-
-            <strong>Disclaimer:</strong>
-
-            This report was generated using publicly available information,
-            lead form inputs, and AI-assisted business analysis.
-
+            <span>
+                <strong>Disclaimer:</strong>
+                This report was generated using publicly available information,
+                lead form inputs, and AI-assisted business analysis.
+            </span>
+            <span>{{ current_date }}</span>
         </footer>
-
     </div>
-
 </body>
 </html>
