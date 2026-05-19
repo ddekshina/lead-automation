@@ -4,6 +4,16 @@ Automated lead intake: validate → scrape/enrich → AI report (HTML + PDF) →
 
 **Documentation:** [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) — system design, assumptions, tradeoffs, limitations, failure handling.
 
+## Demo
+
+### Lead Intake Form
+
+<img src="screenshots/lead-form.png" width="900"/>
+
+### Submission Confirmation
+
+<img src="screenshots/submit-confirmation.png" width="900"/>
+
 ## Features
 
 - **Lead validation** — Pydantic + server-side checks
@@ -15,7 +25,7 @@ Automated lead intake: validate → scrape/enrich → AI report (HTML + PDF) →
 
 ## Architecture (summary)
 
-```
+```text
 POST /api/submit-lead  →  202 Accepted (default) + BackgroundTasks
                       →  200 + full payload (?sync=true for scripts)
 
@@ -65,6 +75,10 @@ python -m uvicorn main:app --reload
 - **Form:** [http://127.0.0.1:8000](http://127.0.0.1:8000) — returns immediately after submit (HTTP 202).
 - **API docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 
+### Swagger API Documentation
+
+<img src="screenshots/swagger.png" width="900"/>
+
 ### 4. API behavior
 
 **Default (recommended UX)** — non-blocking:
@@ -93,15 +107,33 @@ curl -s -X POST "http://127.0.0.1:8000/api/submit-lead?sync=true" ^
   -d "{\"full_name\":\"Jane\",\"work_email\":\"jane@example.com\",\"company_name\":\"Acme\",\"company_website\":\"https://example.com\",\"industry\":\"SaaS\",\"company_size\":\"51-200\",\"current_challenge\":\"We need better lead qualification for enterprise.\",\"improvement_goal\":\"We want faster personalized follow-up with less manual research.\"}"
 ```
 
+## Generated Reports
+
+### HTML Report
+
+<img src="screenshots/html-report.png" width="900"/>
+
+### Email Delivery
+
+<img src="screenshots/email.png" width="900"/>
+
 Reports are written under `generated_reports/`.
 
 ## Google Workspace / Drive
+
+### Google Sheets Integration
+
+<img src="screenshots/google-sheets-integration.png" width="900"/>
+
+### Google Drive Archive
+
+<img src="screenshots/google-drive-integration.png" width="900"/>
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the **Google Setup** section in the prior README flow: Sheets uses a service account; personal Gmail Drive uses `python scripts/authorize_google_drive.py` and `GOOGLE_DRIVE_TOKEN_JSON`.
 
 ## Project layout
 
-```
+```text
 lead-automation/
 ├── main.py                 # FastAPI app + landing form
 ├── docs/
