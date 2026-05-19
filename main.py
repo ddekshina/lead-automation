@@ -64,6 +64,11 @@ async def landing():
                 color: #818cf8; text-decoration: none; margin-right: 12px;
                 border: 1px solid #334155; padding: 8px 16px; border-radius: 8px;
             }
+            .info {
+                background: #1e293b; border: 1px solid #334155; border-radius: 12px;
+                padding: 14px 16px; margin-bottom: 1.5rem; font-size: 14px; color: #94a3b8;
+                line-height: 1.55;
+            }
             form {
                 background: #111827; border: 1px solid #334155;
                 border-radius: 16px; padding: 28px;
@@ -88,6 +93,7 @@ async def landing():
                 display: none; font-size: 14px; line-height: 1.5;
             }
             .ok { background: #064e3b; color: #a7f3d0; border: 1px solid #059669; }
+            .pending { background: #1e3a5f; color: #bfdbfe; border: 1px solid #3b82f6; }
             .err { background: #450a0a; color: #fecaca; border: 1px solid #dc2626; }
             @media (max-width: 640px) { .grid { grid-template-columns: 1fr; } }
         </style>
@@ -95,7 +101,7 @@ async def landing():
     <body>
         <div class="container">
             <h1>SimplifIQ Lead Automation</h1>
-            <p class="subtitle">Submit a lead to trigger enrichment, AI report generation, and email delivery.</p>
+            <p class="subtitle">Submit a lead — you get an instant confirmation while we generate your report and email it.</p>
             <div class="links">
                 <a href="/docs">API Docs</a>
                 <a href="/api/health">Health Check</a>
@@ -144,7 +150,7 @@ async def landing():
                             placeholder="What outcome are you trying to achieve?"></textarea>
                     </div>
                 </div>
-                <button type="submit" id="submitBtn">Generate Report &amp; Send Email</button>
+                <button type="submit" id="submitBtn">Submit lead</button>
                 <div id="status"></div>
             </form>
         </div>
@@ -167,18 +173,37 @@ async def landing():
                         headers: { "Content-Type": "application/json" },
                         body: JSON.stringify(payload),
                     });
-                    const data = await res.json();
+                    let data = {};
+                    try { data = await res.json(); } catch (_) {}
+
                     status.style.display = "block";
 
-                    if (res.ok) {
+                    if (res.status === 202 && data.accepted) {
+                        status.className = "pending";
+                        status.innerHTML =
+                            "<strong>Request received.</strong><br>" +
+                            (data.message || "We will email your report shortly.") +
+                            (data.submission_id
+                                ? "<br><span style=opacity:.85>Reference: " + data.submission_id + "</span>"
+                                : "") +
+                            (data.note ? "<br><br><small>" + data.note + "</small>" : "");
+                        form.reset();
+                    } else if (res.ok && data.company) {
                         status.className = "ok";
                         status.innerHTML =
-                            "Pipeline complete for <strong>" + data.company + "</strong>.<br>" +
+                            "<strong>Pipeline complete</strong> (sync mode).<br>" +
+                            "Company: " + data.company + "<br>" +
                             "Scrape: " + data.scrape_status + " | Email sent: " + data.email_sent +
                             (data.pdf_report ? "<br>PDF: " + data.pdf_report : "");
                     } else {
                         status.className = "err";
-                        status.textContent = data.detail || "Submission failed.";
+                        const d = data.detail;
+                        status.textContent =
+                            typeof d === "string"
+                                ? d
+                                : Array.isArray(d)
+                                    ? d.map((x) => x.msg || JSON.stringify(x)).join("; ")
+                                    : "Submission failed.";
                     }
                 } catch (err) {
                     status.style.display = "block";

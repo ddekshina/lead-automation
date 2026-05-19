@@ -46,6 +46,41 @@ def _inline_bold(text: str) -> str:
     return re.sub(r"\*\*(.+?)\*\*", r"<b>\1</b>", text)
 
 
+def _reportlab_safe_text(text: str) -> str:
+    """
+    ReportLab Paragraph uses a strict mini-HTML parser. LLM output often includes
+    <br> chains or bare '&' which trigger ValueError / paraparser errors.
+    """
+    if not text:
+        return ""
+    s = text
+    # <br> inside "one line" bullets breaks the parser ("No content allowed in br tag")
+    s = re.sub(r"<br\s*/?>", " — ", s, flags=re.IGNORECASE)
+    # Strip other common HTML wrappers the model might emit
+    s = re.sub(
+        r"</?(?:p|div|span|li|ul|ol|a|h[1-6])\b[^>]*>",
+        " ",
+        s,
+        flags=re.IGNORECASE,
+    )
+    s = _inline_bold(s)
+    # Keep only <b>, <i>, <u> tags we trust; escape anything else angle-bracketed
+    def _escape_unknown_tag(m: re.Match) -> str:
+        tag = m.group(0)
+        if re.match(r"</?(?:b|i|u)(?:\s[^>]*)?>", tag, re.IGNORECASE):
+            return tag
+        return tag.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    s = re.sub(r"<[^>]+>", _escape_unknown_tag, s)
+    # Bare ampersands (e.g. "R&D") must be entities for the XML-style parser
+    s = re.sub(
+        r"&(?!#?[0-9a-zA-Z]+;|(?:amp|lt|gt|quot|apos|nbsp);)",
+        "&amp;",
+        s,
+    )
+    return s
+
+
 class ReportBuilder:
 
     def __init__(self, company_name: str):
@@ -165,11 +200,15 @@ class ReportBuilder:
         )
 
         # Cover
-        story.append(Paragraph(self.company_name, title_style))
-        story.append(Paragraph("Personalized Business Insight Report", subtitle_style))
+        story.append(Paragraph(_reportlab_safe_text(self.company_name), title_style))
         story.append(Paragraph(
-            f"Generated on {datetime.now().strftime('%B %d, %Y')}",
-            subtitle_style
+            _reportlab_safe_text("Personalized Business Insight Report"), subtitle_style
+        ))
+        story.append(Paragraph(
+            _reportlab_safe_text(
+                f"Generated on {datetime.now().strftime('%B %d, %Y')}"
+            ),
+            subtitle_style,
         ))
         story.append(HRFlowable(
             width="100%", thickness=1, color=colors.HexColor("#e5e7eb")
@@ -217,18 +256,19 @@ class ReportBuilder:
                 in_table = False
 
             if stripped.startswith("# "):
-                story.append(Paragraph(_inline_bold(stripped[2:]), h1_style))
+                story.append(Paragraph(_reportlab_safe_text(stripped[2:]), h1_style))
             elif stripped.startswith("## "):
-                story.append(Paragraph(_inline_bold(stripped[3:]), h2_style))
+                story.append(Paragraph(_reportlab_safe_text(stripped[3:]), h2_style))
             elif stripped.startswith("### "):
-                story.append(Paragraph(_inline_bold(stripped[4:]), h2_style))
+                story.append(Paragraph(_reportlab_safe_text(stripped[4:]), h2_style))
             elif stripped.startswith(("- ", "* ")):
-                story.append(Paragraph(f"• {_inline_bold(stripped[2:])}", bullet_style))
+                story.append(
+                    Paragraph(_reportlab_safe_text(f"• {stripped[2:]}"), bullet_style)
+                )
             elif re.match(r"^\d+\.\s", stripped):
-                # Numbered list item
-                story.append(Paragraph(_inline_bold(stripped), bullet_style))
+                story.append(Paragraph(_reportlab_safe_text(stripped), bullet_style))
             else:
-                story.append(Paragraph(_inline_bold(stripped), body_style))
+                story.append(Paragraph(_reportlab_safe_text(stripped), body_style))
 
             i += 1
 
@@ -236,10 +276,16 @@ class ReportBuilder:
         if in_table and table_rows:
             story.append(_build_rl_table(table_rows, body_style))
 
-        doc.build(story)
-        pdf_bytes = buffer.getvalue()
-        buffer.close()
-        return pdf_bytes
+        try:
+            doc.build(story)
+            return buffer.getvalue()
+        except Exception as e:
+            logger.error(
+                "PDF build failed (often bad markup in AI output): %s", e, exc_info=True
+            )
+            return None
+        finally:
+            buffer.close()
 
     def save_pdf_report(self, pdf_bytes: bytes, filename: str) -> Path | None:
         """Saves PDF report to generated_reports/. Returns path."""
@@ -288,7 +334,9 @@ def _build_rl_table(rows: list[list[str]], base_style: Any):
     table_data = []
     for row_idx, row in enumerate(rows):
         style = header_style if row_idx == 0 else cell_style
-        table_data.append([Paragraph(cell, style) for cell in row])
+        table_data.append(
+            [Paragraph(_reportlab_safe_text(cell), style) for cell in row]
+        )
 
     col_count = max(len(r) for r in table_data)
     col_width = (A4[0] - 1.5 * inch) / col_count

@@ -1,6 +1,7 @@
 import logging
 import re
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+import uuid
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Query
 from fastapi.responses import JSONResponse
 
 from app.schemas.lead_schema import LeadRequest
@@ -109,23 +110,72 @@ def _run_pipeline(lead_data: dict) -> dict:
     return result
 
 
+def _run_pipeline_safe(lead_data: dict, submission_id: str) -> None:
+    """Background entrypoint: log failures instead of losing them silently."""
+    company = lead_data.get("company_name", "?")
+    logger.info("[Pipeline] Background job %s started for %s", submission_id, company)
+    try:
+        _run_pipeline(lead_data)
+        logger.info("[Pipeline] Background job %s completed for %s", submission_id, company)
+    except ValueError as e:
+        logger.error("[Pipeline] Job %s validation error: %s", submission_id, e)
+    except EnvironmentError as e:
+        logger.error("[Pipeline] Job %s config error: %s", submission_id, e)
+    except RuntimeError as e:
+        logger.error("[Pipeline] Job %s runtime error: %s", submission_id, e)
+    except Exception:
+        logger.exception("[Pipeline] Job %s failed for %s", submission_id, company)
+
+
 @router.post("/submit-lead", summary="Submit a lead and trigger the full automation pipeline")
-async def submit_lead(payload: LeadRequest, background_tasks: BackgroundTasks):
+async def submit_lead(
+    payload: LeadRequest,
+    background_tasks: BackgroundTasks,
+    sync: bool = Query(
+        False,
+        description=(
+            "If false (default), return 202 immediately and process in the background. "
+            "If true, run the full pipeline inline and return 200 with detailed results."
+        ),
+    ),
+):
     """
     Main lead intake endpoint.
 
-    Accepts full lead form data, validates it, runs the enrichment +
-    AI report + email pipeline, and returns a result summary.
+    Default (**sync=false**): HTTP **202 Accepted** right after validation; scrape, AI,
+    PDF, email, and Google integrations run in a background task so the client is not blocked.
 
-    For production high-volume use, swap the direct call for:
-        background_tasks.add_task(_run_pipeline, lead_data)
+    **sync=true**: full pipeline in the request/response (for scripts and debugging).
     """
     lead_data = payload.model_dump()
     # Pydantic EmailStr serialises to an EmailStr object; force to plain str
     lead_data["work_email"] = str(lead_data["work_email"])
 
+    if not sync:
+        submission_id = str(uuid.uuid4())
+        background_tasks.add_task(_run_pipeline_safe, lead_data, submission_id)
+        return JSONResponse(
+            status_code=202,
+            content={
+                "accepted": True,
+                "async_processing": True,
+                "submission_id": submission_id,
+                "company": lead_data["company_name"],
+                "message": (
+                    "Your request was received. We are generating your personalized report and "
+                    "will email it to the address you provided shortly — usually within a few minutes."
+                ),
+                "note": (
+                    "Check spam or promotions folders if you do not see the message. "
+                    "Developers can call the same endpoint with ?sync=true for a blocking response "
+                    "that includes file paths and delivery flags."
+                ),
+            },
+        )
+
     try:
         result = _run_pipeline(lead_data)
+        result["async_processing"] = False
         return JSONResponse(content=result, status_code=200)
 
     except ValueError as e:
@@ -141,7 +191,7 @@ async def submit_lead(payload: LeadRequest, background_tasks: BackgroundTasks):
         logger.exception(f"Unexpected pipeline error: {e}")
         raise HTTPException(
             status_code=500,
-            detail="An unexpected error occurred. Please try again."
+            detail="An unexpected error occurred. Please try again.",
         )
 
 
