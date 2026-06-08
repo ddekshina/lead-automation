@@ -20,7 +20,7 @@ logging.basicConfig(
 )
 
 app = FastAPI(
-    title="SimplifIQ Lead Automation API",
+    title="Lead Automation API",
     description="Automated lead enrichment, AI report generation, and email delivery.",
     version="1.0.0",
     docs_url="/docs",
@@ -46,7 +46,7 @@ async def landing():
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>SimplifIQ Lead Automation</title>
+        <title>Lead Automation</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body {
@@ -100,7 +100,7 @@ async def landing():
     </head>
     <body>
         <div class="container">
-            <h1>SimplifIQ Lead Automation</h1>
+            <h1>Lead Automation</h1>
             <p class="subtitle">Submit a lead — you get an instant confirmation while we generate your report and email it.</p>
             <div class="links">
                 <a href="/docs">API Docs</a>

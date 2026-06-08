@@ -50,7 +50,7 @@ def send_report_email(
         f"Thank you for submitting your details.\n\n"
         f"Please find your personalized business insight report for {company_name} attached.\n\n"
         f"We look forward to connecting with you.\n\n"
-        f"Best regards,\nThe SimplifIQ Team"
+        f"Best regards,\nThe Team"
     )
 
     # Rich HTML email body
@@ -69,7 +69,7 @@ def send_report_email(
       </ul>
       <p>We'd love to discuss these insights further. Feel free to reply to this email
          or schedule a quick call.</p>
-      <p style="margin-top:24px;">Best regards,<br><strong>The SimplifIQ Team</strong></p>
+      <p style="margin-top:24px;">Best regards,<br><strong>The Team</strong></p>
     </body></html>
     """
 

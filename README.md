@@ -1,4 +1,4 @@
-# SimplifIQ Lead Automation
+# Lead Automation
 
 Automated lead intake: validate → scrape/enrich → AI report (HTML + PDF) → email → optional Google Sheets + Drive.
 
@@ -74,10 +74,6 @@ python -m uvicorn main:app --reload
 
 - **Form:** [http://127.0.0.1:8000](http://127.0.0.1:8000) — returns immediately after submit (HTTP 202).
 - **API docs:** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
-
-### Swagger API Documentation
-
-<img src="screenshots/swagger.png" width="900"/>
 
 ### 4. API behavior
 
